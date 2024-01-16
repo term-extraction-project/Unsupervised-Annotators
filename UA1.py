@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Installing necessary modules and run necessary scripts
 """
