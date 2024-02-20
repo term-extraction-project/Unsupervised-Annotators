@@ -179,7 +179,7 @@ custom_tokenizer = lambda x: [x]
 vectorizer = TfidfVectorizer( tokenizer = custom_tokenizer,        # Using custom_tokenizer for tokenization
                               lowercase = False,                   # Not convert text to lower case
                               use_idf = False,                     # Disabling the use of inverse document frequency (IDF)
-                              ngram_range = (1,2),                 # Use of unigrams and bigrams
+                              ngram_range = (1,3),                 # Use of unigrams, bigrams and trigrams
                               max_df = 0.5,                        # Ignoring tokens that occur in more than 50% of documents
                               token_pattern = None)                # Using custom_tokenizer, thus a token template is not required
 X = vectorizer.fit_transform(all_ngrams)    # Converting all_ngrams text data list to sparse TF-IDF matrix
