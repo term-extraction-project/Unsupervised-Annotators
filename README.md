@@ -23,3 +23,11 @@ Morphological analysis is used to filter single nouns. A word is promoted as a t
 
 First, the candidates are extracted and pre-cleaned of punctuation, stop-words, and digits. Next, using NMF, terms are ranked, and separated by documents and topics. After that, the top words are extracted and listed as terms.
 
+## Results of UA1 and UA2 on the ACTER Corpus(english)
+
+| F1%  | UA1 (IBM) | UA2 (NMF) |
+|------|-----------|-----------|
+| Corp | 24.3      | 25.34     |
+| Equi | 28.9      | 31.96     |
+| Wind | 29.5      | 24.93     |
+| HTFL | 32.7      | 31.21     |
