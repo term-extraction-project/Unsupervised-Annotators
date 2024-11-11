@@ -92,7 +92,7 @@ punc_without.remove("'")
 punc_all=list(string.punctuation)+["»","«"]
 
 
-def tokinizer(sent):
+def tokinizer(sent):                    # split texts on tokens
   index=0
   list_tok=[]
   for i in sent.words:
@@ -100,7 +100,7 @@ def tokinizer(sent):
         index+=1
   return list_tok
 
-def concatenate_ngrams(candidate):
+def concatenate_ngrams(candidate):        # using for phrases, concatenate unigrams to one phrase
   cand_temp= []
   temp=''
   if type(candidate) !=type(str()):
@@ -118,7 +118,7 @@ list_seq_2=  [[["PROPN","NOUN"],"*"],
               ["ADJ",'*', ["PROPN","NOUN"], '*']]
 
 
-def filter_ngrams_by_pos_tag(sentence, sequense):
+def filter_ngrams_by_pos_tag(sentence, sequense):                  # extract multiword expressions candidates using pos-tag templates
     filtered_ngrams=[]
     t=0
     for seq in sequense:
@@ -182,7 +182,7 @@ def filter_ngrams_by_pos_tag(sentence, sequense):
     return  filtered_ngrams
 
 
-def f_req_calc(mwe, all_txt, f_raw_req_list):
+def f_req_calc(mwe, all_txt, f_raw_req_list): # calculate frequency raw and rectified 
   temp=all_txt
   mwe_c=concatenate_ngrams(mwe)
   for i in f_raw_req_list:
@@ -195,7 +195,7 @@ def f_req_calc(mwe, all_txt, f_raw_req_list):
 import string
 
 
-class UnionFind:
+class UnionFind:       # group candidates by same positions of their words in text
     def __init__(self, size):
         self.parent = list(range(size))
         self.rank = [0] * size
@@ -239,7 +239,7 @@ def group_items(lst):
 
     return lst
 
-class PhraseExtractor:
+class PhraseExtractor: # class for extract phrases
     def __init__(self, text, list_seq=list_seq_2,  cohision_filter=True, additional_text="1", f_raw_sc=9, f_req_sc=3):
         self.text = text
         self.cohision_filter=cohision_filter
@@ -318,7 +318,7 @@ class PhraseExtractor:
         return candidates
 
 
-characters="аәбвгғдеёжзийкқлмнңоөпрстуұүфхһцчшщъыіьэюя 0123456789'-()’abcdefghijklmnopqrstuvwxyz"
+characters="аәбвгғдеёжзийкқлмнңоөпрстуұүфхһцчшщъыіьэюя 0123456789'-()’abcdefghijklmnopqrstuvwxyz"       # valid character values
 
 def parse_candidates(text:str):
         # Remove the default rule that splits on hyphens
@@ -348,7 +348,7 @@ def parse_candidates(text:str):
                     candidate_list.append(CandidateMWE(chunk, head, sent.text, model.encode(chunk, convert_to_tensor=True).to(device), sent_encode))
                 # print(f'Added candicate expression: {cleared_candidate}')
 
-        for word in sent.words:
+        for word in sent.words:             # extract single noun camdidates 
                     if word.upos in ['NOUN', 'PROPN']:
                        if len(set(word.text).intersection(set(characters)))==len(set(word.text)) and word.text not in temp_noun:
                            single_noun_list[word.text]=  CandidateW(word.text, word.lemma, model.encode(word.text))
@@ -356,12 +356,12 @@ def parse_candidates(text:str):
 
     return list(set(candidate_list)), single_noun_list.values()
 
-def dist(wi_encode, wj_encode):
+def dist(wi_encode, wj_encode):  
     return util.pytorch_cos_sim(
         wi_encode,
         wj_encode
     )
-def calculate_topic_score(expression_embedding, sentence_embedding)->float:
+def calculate_topic_score(expression_embedding, sentence_embedding)->float:           # calculate topic score
     """
     Calculate the topic score between a multiword expression and a sentence.
 
@@ -387,7 +387,7 @@ def calculate_topic_score(expression_embedding, sentence_embedding)->float:
     return topic_score
 
 
-def calculate_specificity_score(mw:CandidateMWE, full_encode:Tensor)->float:
+def calculate_specificity_score(mw:CandidateMWE, full_encode:Tensor)->float:              # calculate specific score
     """
     Calculate the specificity score (SP) between a multiword expression (mw) and a list of words/multiword expressions (w).
 
@@ -409,7 +409,7 @@ def calculate_specificity_score(mw:CandidateMWE, full_encode:Tensor)->float:
     return specificity_score
 
 
-def detect_mw_terms(candidate_list:List[CandidateMWE], TSP:float = 0.2, Ttopic:float = 0.7)->List[CandidateMWE]:
+def detect_mw_terms(candidate_list:List[CandidateMWE], TSP:float = 0.2, Ttopic:float = 0.7)->List[CandidateMWE]:        # filter phrases by topic and specific score
 
     full_encode= torch.stack([wi.self_encode for wi in candidate_list], dim=0)
 
@@ -423,7 +423,7 @@ def detect_mw_terms(candidate_list:List[CandidateMWE], TSP:float = 0.2, Ttopic:f
 
     return temp_candidate
 
-def detect_single_noun_terms(term_mws:List[CandidateMWE], single_noun_list:List[CandidateW], subtoken_threshold:int=4)->List[CandidateW]:
+def detect_single_noun_terms(term_mws:List[CandidateMWE], single_noun_list:List[CandidateW], subtoken_threshold:int=4)->List[CandidateW]:        # filter single nouns
     term_nouns=[]
     for candidate in single_noun_list:
         #Check if the lemma of the noun is the same as any of the heads of the multiword expressions.
@@ -444,7 +444,7 @@ def detect_single_noun_terms(term_mws:List[CandidateMWE], single_noun_list:List[
             # print(f'{candidate.text} is added by subtokens count: {len(subtokens)}')
     return term_nouns
 
-def test_file(text):
+def test_file(text):        # monitoring the stage of term extraction process
 
     print('_____________________________FIRST STEP_________________________________________')
     candidate_list, single_noun_list=parse_candidates(text)
@@ -460,7 +460,7 @@ def test_file(text):
 
     return extracted_terms
 
-def calculate_metrics(true_terms, extracted_terms):
+def calculate_metrics(true_terms, extracted_terms):     # calculate metrics precision, recall, f1 score
     true_positives = len(true_terms.intersection(extracted_terms))
     false_positives = len(extracted_terms.difference(true_terms))
     false_negatives = len(true_terms.difference(extracted_terms))
@@ -471,7 +471,7 @@ def calculate_metrics(true_terms, extracted_terms):
 
     return precision, recall, f1_score
 
-def compare_sets(extracted_terms, true_terms):
+def compare_sets(extracted_terms, true_terms):               
     true_detections = extracted_terms.intersection(true_terms)
     false_gaps = true_terms.difference(extracted_terms)
     false_detections = extracted_terms.difference(true_terms)
@@ -500,7 +500,7 @@ f1_score_set=[]
 whole_extracted_terms=[]
 results=[]
 kk=[]
-stop_words=["туралы","кезде","кездесі","кезінде","арасында","арқылы","жылы","соңғы","басқалай","жылдың","арнайы","жылдардың","тамаша","байлынысты","бар","байланысты","басқа"]
+stop_words=["туралы","кезде","кездесі","кезінде","арасында","арқылы","жылы","соңғы","басқалай","жылдың","арнайы","жылдардың","тамаша","байлынысты","бар","байланысты","басқа"]  # kazakh stop-words 
 
 for file_name in files_name:
     print('____________________________________________________________________\n')
@@ -509,7 +509,7 @@ for file_name in files_name:
     extracted_terms=test_file(texts[file_name])
     results.append(extracted_terms)
     extracted_terms=[i for i in extracted_terms if i[0]!="-" and  i[-1]!="-"]
-    extracted_terms=set(extracted_terms) - set([i for i in extracted_terms for w in stop_words if w in i])
+    extracted_terms=set(extracted_terms) - set([i for i in extracted_terms for w in stop_words if w in i])   # cleaning phrases with stop words
 
     print('____________________________________________________________________\n')
 
@@ -525,12 +525,7 @@ print(set(whole_extracted_terms))
 
 precision, recall, f1_score, true_detections, false_gaps, false_detections=report(set(all_true_terms), whole_extracted_terms)
 
-# block TSP:float = 0.15, Ttopic:float = 0.4
-# material TSP:float = 0.15, Ttopic:float = 0.5
-
-
-kkkk=whole_extracted_terms - set([i for i in whole_extracted_terms for w in stop_words if w in i])
-
+# lemmatization extracted terms and true terms for check the efficiency of UA1
 tt_lemma=[]
 for i in set(all_true_terms):
   temp=[]
@@ -543,7 +538,7 @@ for i in set(all_true_terms):
   tt_lemma.append(" ".join(temp))
 
 ext_lemma=[]
-for i in set(kkkk):
+for i in set(whole_extracted_terms):
   temp=[]
   for s in nlp(i).sentences:
      for i, w in enumerate(s.words):
@@ -553,6 +548,7 @@ for i in set(kkkk):
             temp.append(w.text)
   ext_lemma.append(" ".join(temp))
 
+# print results for lematize true terms and extracted terms
 precision, recall, f1_score, true_detections, false_gaps, false_detections=report(set(tt_lemma), set(ext_lemma))
 
 
