@@ -32,8 +32,10 @@ for filename in file_list:
 all_true_terms=[]
 
 ann_path = "path to terms of corpus"    #  Path to domain terms in the corresponding language,    extract from txt file
-with open(ann_path, 'r') as file:
-    all_true_terms = [line.lower().replace("  "," ").replace("- ","-").strip() for line in file]  # Strips newline characters from each line
+
+df = pd.read_csv(ann_path, delimiter=';')
+data_list = df.values.tolist()
+all_true_terms=[i[0] for i in data_list]
 
 print('True terms all: ', len(set(all_true_terms)))
 
