@@ -35,7 +35,7 @@ ann_path = "path to terms of corpus"    #  Path to domain terms in the correspon
 
 df = pd.read_csv(ann_path, delimiter=';')
 data_list = df.values.tolist()
-all_true_terms=[i[0] for i in data_list]
+all_true_terms=[i[0].lower() for i in data_list]
 
 print('True terms all: ', len(set(all_true_terms)))
 
