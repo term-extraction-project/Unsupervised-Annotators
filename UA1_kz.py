@@ -4,6 +4,7 @@ import csv
 
 #################### MATCHA ####################################
 # Connecting the Match case
+path_to_corpus="path to corpus" #write  path to corpus
 
 langs=["en","kaz"]               
 domains=["block","material_sci"]
@@ -11,7 +12,7 @@ domains=["block","material_sci"]
 language=langs[1]                # Language selection    set kazakh , since this version is for the Kazakh language
 domain=domains[0]                # domain selection
 
-folder_path="path to texts of corpus"          # Path to domain texts in the corresponding language
+folder_path=path_to_corpus+"/Matcha-main/"+language+"/"+domain+"/annotated/texts"          # Path to domain texts in the corresponding language
 files_name=[]
 texts=dict()
 true_terms_by_doc=dict()
@@ -31,7 +32,7 @@ for filename in file_list:
 
 all_true_terms=[]
 
-ann_path = "path to terms of corpus"    #  Path to domain terms in the corresponding language,    extract from txt file
+ann_path = path_to_corpus+"/Matcha-main/"+language+"/"+domain+"/annotated/annotations/unique_annotation_lists/"+domain+"_"+language+"_terms.csv"    #  Path to domain terms in the corresponding language,    extract from csv file
 
 df = pd.read_csv(ann_path, delimiter=';')
 data_list = df.values.tolist()
