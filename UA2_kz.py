@@ -136,7 +136,6 @@ abb1=[i.lower() for i in abb]
 #################### EXTRACT PHRATHES ####################################
 
 all_tetxts_lemms=" ".join([word.lemma for sent in nlp(all_texts).sentences for word in sent.words])
-!pip uninstall -y multi_word_expressions
 !pip install git+https://github.com/term-extraction-project/multi_word_expressions.git
 
 from multi_word_expressions import PhraseExtractor
