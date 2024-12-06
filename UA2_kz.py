@@ -138,25 +138,28 @@ abb1=[i.lower() for i in abb]
 all_tetxts_lemms=" ".join([word.lemma for sent in nlp(all_texts).sentences for word in sent.words])
 !pip install git+https://github.com/term-extraction-project/multi_word_expressions.git
 
-from multi_word_expressions import PhraseExtractor
+from multi_word_expressions.kazakh import KazakhPhraseExtractor
+
 clear_output()
 characters="аәбвгғдеёжзийкқлмнңоөпрстуұүфхһцчшщъыіьэюя 0123456789'-()’abcdefghijklmnopqrstuvwxyz"
 candidate_list=[]
 for text in texts:
     doc = nlp(text)
     for sent in doc.sentences:
-          extractor = PhraseExtractor(
+          extractor = KazakhPhraseExtractor(
                         text=sent,
-                        lang="kk",
                         #stop_words=custom_stop_words_en,   # Пользовательские стоп-слова, по умолчанию установлены
                         #list_seq=custom_pos_patterns_en,   # Пользовательские POS-шаблоны, по умолчанию установлены
                         cohision_filter=True,               # Фильтрация по когезии
                         additional_text=all_tetxts_lemms,    # Дополнительный текст (если требуется)
-                        f_raw_sc=9,                         # Частотный фильтр для сырого текста
-                        f_req_sc=3)                         # Частотный фильтр для отобранных кандидатов
+                        f_raw_sc=2,                         # Частотный фильтр для сырого текста
+                        f_req_sc=1)                         # Частотный фильтр для отобранных кандидатов
           candidates = extractor.extract_phrases()
           candidate_list+=candidates
+    print(len(set(candidate_list)))
 candidate_list=[i for i in candidate_list if set(i.lower()).intersection(set(characters))==set(i.lower())]
+print(len(set(candidate_list)))
+
 #################### ------- ####################################
 
 
@@ -180,8 +183,8 @@ for i in set(candidate_list):
        s_en=s[1]
        topic_score=model_2.similarity(i_en, s_en).tolist()[0][0]
        cos_mwe.append([i,topic_score])
-uni=[i[0] for i in cos_uni if i[1]>0.8]
-mwe=[i[0] for i in cos_mwe if i[1]>0.8]
+uni=[i[0] for i in cos_uni if i[1]>0.7]
+mwe=[i[0] for i in cos_mwe if i[1]>0.7]
 
 #################### ------- ####################################
 
@@ -213,13 +216,14 @@ for i in set(mwe):
             temp.append(w.text)
   ext_lemma_m.append(" ".join(temp))
 #################### ------- ####################################
-
+uni_count= [word for word in set(ext_lemma_u) for _ in range(all_tetxts_lemms.lower().count(word))]
+mwe_count= [word for word in set(ext_lemma_m) for _ in range(all_tetxts_lemms.lower().count(word))]
 
 #################### NMF ####################################
 
 # Customize the number of topics and terms
 num_components = 5   # Selecting the number of topics
-num_terms = 200         # Selecting the number of terms to be extracted from each topic
+num_terms = 1000         # Selecting the number of terms to be extracted from each topic
 
 # Create a custom_tokenizer lambda function that accepts a string x and returns a list containing that string
 custom_tokenizer = lambda x: [x]
@@ -231,7 +235,7 @@ vectorizer = TfidfVectorizer( tokenizer = custom_tokenizer,        # Using custo
                               ngram_range = (1,3),                 # Use of unigrams, bigrams and trigrams
                               max_df = 0.5,                        # Ignoring tokens that occur in more than 50% of documents
                               token_pattern = None)                # Using custom_tokenizer, thus a token template is not required
-X = vectorizer.fit_transform(ext_lemma_m+ext_lemma_u+abb1)    # Converting all_ngrams text data list to sparse TF-IDF matrix
+X = vectorizer.fit_transform(uni_count+mwe_count)    # Converting all_ngrams text data list to sparse TF-IDF matrix
 
 # Initialization of NMF (Non-Negative Matrix Factorization) model object
 model = NMF(n_components = num_components,     # Number of components (topics) in the factorization
@@ -246,17 +250,6 @@ model = NMF(n_components = num_components,     # Number of components (topics) i
 W = model.fit_transform(X)                      # Matrix W - weights of topics in documents
 H = model.components_                           # Matrix H - topics in terms
 terms = vectorizer.get_feature_names_out()      # Extracting the list of terms (words) from the vectorizer
-
-def calculate_metrics(true_terms, extracted_terms):
-    true_positives = len(true_terms.intersection(extracted_terms))
-    false_positives = len(extracted_terms.difference(true_terms))
-    false_negatives = len(true_terms.difference(extracted_terms))
-
-    precision = true_positives / (true_positives + false_positives) if (true_positives + false_positives) != 0 else 0
-    recall = true_positives / (true_positives + false_negatives) if (true_positives + false_negatives) != 0 else 0
-    f1_score = 2 * (precision * recall) / (precision + recall) if (precision + recall) != 0 else 0
-
-    return precision, recall, f1_score
 
 
 def get_topics_terms(terms, H, num_terms):
@@ -277,19 +270,46 @@ def final_metrics(num_components, num_terms):
     topics_terms = get_topics_terms(terms, H, num_terms)    # Obtaining terms for each topic using the specified number of terms
     top_topic_terms = get_top_topic(topics_terms, W)        # Obtaining terms for the top topic with the highest sum of weights
 
-    precision, recall, f1_score = calculate_metrics(set(tt_lemma_u+tt_lemma_m+abb_i), set(top_topic_terms))    # Calculating precision, recall, and F1-score for true and extracted terms
+    precision, recall, f1_score = calculate_metrics(set(all_true_terms), set(top_topic_terms))    # Calculating precision, recall, and F1-score for true and extracted terms   tt_lemma_u+tt_lemma_m   all_true_terms
     print(len(set(top_topic_terms)))
-    print(len(set(all_true_terms).intersection(set(top_topic_terms))))
     return precision, recall, f1_score,top_topic_terms
 
-precision, recall, f1_score,top_topic_terms = final_metrics(num_components, num_terms)
-print("Precision:", precision)
-print("Recall:", recall)
-print("F1 Score:", f1_score)
+pron_b=[]
+for text in texts:
+  doc=nlp(text)
 
+  for w in doc.sentences:
+    temp=""
+    for i in w.words:
+      if i.pos=="PROPN":
+        temp=(temp+" "+i.text).strip()
+      else:
+        if len(temp)>0:
+          pron_b.append(temp)
+        temp=""
+    if len(temp)>0:
+          pron_b.append(temp)
 
+pron_l=[i.lower() for i in set(pron_b) if len(set(i.lower()).intersection(set(punc2+list(string.digits))))==0]
+ne_mwe=[i for i in pron_l if len(i.split(" "))>1 or len(i.split("-"))>1]
+ne_uni=set(pron_l)-set(ne_mwe)
 
+ext_lemma_u=[i.lemma for tt in set(ne_uni)  for s in nlp(tt).sentences  for i in s.words]
 
-
-
-
+ext_lemma_m=[]
+for i in set(ne_mwe):
+  temp=[]
+  for s in nlp(i).sentences:
+     for i, w in enumerate(s.words):
+        if i==len(s.words)-1:
+          temp.append(w.lemma)
+        else:
+            temp.append(w.text)
+  ext_lemma_m.append(" ".join(temp))
+            
+abb_l=[i.lemma for tt in set(abb1)  for s in nlp(tt).sentences  for i in s.words]
+precision, recall, f1_score=calculate_metrics(set(tt_lemma_u+tt_lemma_m), set(top_topic_terms_U+abb_l+top_topic_terms_m+ext_lemma_m+ext_lemma_u))
+print(len(set(top_topic_terms_U+abb_l+top_topic_terms_m+ext_lemma_m+ext_lemma_u)))
+print("Precision:", round(precision*100,2))
+print("Recall:", round(recall*100,2))
+print("F1 Score:", round(f1_score*100,2))
