@@ -43,7 +43,6 @@ print('True terms all: ', len(set(all_true_terms)))
 print('True terms uni: ', len(set(true_terms_uni)))
 print('True terms mwe: ', len(set(true_terms_mwe)))
 
-
 import string
 punc = list(string.punctuation)+["»","«"]
 punc.remove('-')
@@ -139,21 +138,18 @@ print(len(set(sents)))
 print(len(set(unigrams)))
 print(len(set(abb1)))
 
-!pip install stanza
-clear_output()
-
 
 !pip install git+https://github.com/term-extraction-project/multi_word_expressions.git
 
-from multi_word_expressions import PhraseExtractor
+from multi_word_expressions.english import EnglishPhraseExtractor
 clear_output()
+
 candidate_list=[]
 for ind, text in enumerate(texts):
-          
+
           all_t=" .".join(texts[:ind] + texts[ind+1:])
 
-          extractor = PhraseExtractor(text=text,
-                                      lang="en",
+          extractor = EnglishPhraseExtractor(text=text,
                                       #stop_words=stop_words,
                                       cohision_filter=True,
                                       additional_text=all_t,
@@ -161,9 +157,13 @@ for ind, text in enumerate(texts):
                                       f_raw_sc=2,
                                       f_req_sc=1)
           candidates = extractor.extract_phrases()
+          print(len(set(candidates)))
 
           candidate_list+=candidates
+print(len(set(candidate_list)))
 candidate_list=[i.lower() for i in candidate_list ]
+
+abb_i=[i[0].lower() for i in data_list if i[1]=="Abb"]
 
 sents_en=[[i,model_2.encode(i, normalize_embeddings=True)] for i in sents]
 
@@ -213,6 +213,9 @@ nltk.download('averaged_perceptron_tagger')
 nltk.download('punkt')
 nltk.download('wordnet')
 
+uni_count= [word for word in set(uni) for _ in range(all_texts.lower().count(word))]
+mwe_count= [word for word in set(mwe) for _ in range(all_texts.lower().count(word))]
+
 # Customize the number of topics and terms
 num_components = 6  # Selecting the number of topics
 num_terms = 1000         # Selecting the number of terms to be extracted from each topic
@@ -227,7 +230,7 @@ vectorizer = TfidfVectorizer( tokenizer = custom_tokenizer,        # Using custo
                               ngram_range = (1,3),                 # Use of unigrams, bigrams and trigrams
                               max_df = 0.5,                        # Ignoring tokens that occur in more than 50% of documents
                               token_pattern = None)                # Using custom_tokenizer, thus a token template is not required
-X = vectorizer.fit_transform(uni+mwe+abb1)    # Converting all_ngrams text data list to sparse TF-IDF matrix
+X = vectorizer.fit_transform(uni_count+mwe_count)    # Converting all_ngrams text data list to sparse TF-IDF matrix
 
 # Initialization of NMF (Non-Negative Matrix Factorization) model object
 model = NMF(n_components = num_components,     # Number of components (topics) in the factorization
@@ -267,14 +270,32 @@ def final_metrics(num_components, num_terms):
     print(len(set(all_true_terms).intersection(set(top_topic_terms))))
     return precision, recall, f1_score,top_topic_terms
 
-precision, recall, f1_score,top_topic_terms = final_metrics(num_components, num_terms)
+pron_b=[]
+for text in texts:
+  doc=nlp(text)
+  temp=""
+  temp_2=''
+  check=False
+  for i in doc:
+    if i.pos_=="PROPN":
 
-print(len(set(top_topic_terms)))
+      if len(temp_2)>0:
+        check=True
+        temp=temp_2
+      temp=(temp+" "+i.text).strip()
+    elif i.pos_=="ADP" and len(temp)>0:
+       temp_2=temp+" "+i.text
+    else:
+      if len(temp)>0:
+         pron_b.append(temp)
+      temp=""
+      temp_2=""
+  if len(temp)>0:
+         pron_b.append(temp)
+pron_l=[i.lower() for i in set(pron_b) if len(set(i.lower()).intersection(set(punc2+list(string.digits))))==0]      
+
+precision, recall, f1_score=calculate_metrics(set(all_true_terms), set(pron_l+top_topic_terms+abb1))
+print(len(set(pron_l+top_topic_terms+abb1)))
 print("Precision:", round(precision*100,2))
 print("Recall:", round(recall*100,2))
 print("F1 Score:", round(f1_score*100,2))
-
-
-
-
-
