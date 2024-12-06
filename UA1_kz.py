@@ -57,7 +57,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 # Load the language model
 # Remove hyphen from the default infix patterns
 from sentence_transformers import SentenceTransformer
-model = SentenceTransformer('all-MiniLM-L6-v2', device=device)
+model = SentenceTransformer('Alibaba-NLP/gte-multilingual-base',trust_remote_code=True)
 
 from sentence_transformers import SentenceTransformer, util
 from typing import List
