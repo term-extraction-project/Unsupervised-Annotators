@@ -139,9 +139,11 @@ print(len(set(unigrams)))
 print(len(set(abb1)))
 
 
-!pip install git+https://github.com/term-extraction-project/multi_word_expressions.git
+!git clone https://github.com/term-extraction-project/multi_word_expressions.git
+import sys
+sys.path.append('/content/multi_word_expressions/extractors') #path to file with extractor
 
-from multi_word_expressions.english import EnglishPhraseExtractor
+from english import EnglishPhraseExtractor
 clear_output()
 
 candidate_list=[]
