@@ -136,9 +136,12 @@ abb1=[i.lower() for i in abb]
 #################### EXTRACT PHRATHES ####################################
 
 all_tetxts_lemms=" ".join([word.lemma for sent in nlp(all_texts).sentences for word in sent.words])
-!pip install git+https://github.com/term-extraction-project/multi_word_expressions.git
 
-from multi_word_expressions.kazakh import KazakhPhraseExtractor
+!git clone https://github.com/term-extraction-project/multi_word_expressions.git
+import sys
+sys.path.append('/content/multi_word_expressions/extractors') #path to file with extractor
+
+from kazakh import KazakhPhraseExtractor
 
 clear_output()
 characters="аәбвгғдеёжзийкқлмнңоөпрстуұүфхһцчшщъыіьэюя 0123456789'-()’abcdefghijklmnopqrstuvwxyz"
