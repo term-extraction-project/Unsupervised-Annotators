@@ -2,7 +2,7 @@
 Installing necessary modules and run necessary scripts
 """
 
-!! pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
+!! pip install torch
 !! pip install spacy
 !! python -m spacy download en_core_web_sm
 !! pip install sentence-transformers
