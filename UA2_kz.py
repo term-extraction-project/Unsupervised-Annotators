@@ -5,7 +5,7 @@ import csv
 from IPython.display import clear_output
 
 from torch import Tensor
-!!pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
+!!pip install torch 
 import torch
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 !! pip install spacy
@@ -26,7 +26,7 @@ import torch.nn.functional as F
 from torch import Tensor
 from transformers import AutoTokenizer, AutoModel
 from sentence_transformers import SentenceTransformer
-model_2 = SentenceTransformer("Alibaba-NLP/gte-multilingual-base", trust_remote_code=True)
+model_encoding = SentenceTransformer("Alibaba-NLP/gte-multilingual-base", trust_remote_code=True)
 
 stop_words=['басқалай', 'сенің', 'бірнеше', 'қазіргі', 'егерде', 'соншалықты', 'жылдардың', 'осы', 'неше', 'себебі', 'секілді', 'осылайша', 'бірақ та', 'қайда', 'кездесі', 'ешқандай', 'қашан', 'жоғары', 'өте', 'бірде', 'өз', 'де',
             'анау', 'сияқты', 'біреу', 'қалай', 'қайталай', 'егер', 'мынау', 'олар', 'арасында', 'сен', 'ешқашан', 'бірдеңе', 'не', 'оң', 'тағы да', 'бар', 'дегенмен', 'ешкім', 'қайта', 'алайда', 'қазір', 'да', 'барлық', 'әркім',
@@ -70,8 +70,10 @@ nltk.download('wordnet')
 
 
 #################### MATCHA CORPUS ####################################
+! git clone https://github.com/term-extraction-project/Matcha.git
+
 # Connecting the Match case
-path_to_corpus="path to corpus" #write  path to corpus
+path_to_corpus="/content/" #write  path to corpus
 
 langs=["en","kaz"]
 domains=["block","material_sci"]
@@ -85,7 +87,7 @@ true_terms_by_doc=dict()
 all_texts=""
 
 all_true_terms=[]
-ann_path = path_to_corpus+"/Matcha-main/"+language+"/"+domain+"/annotated/annotations/unique_annotation_lists/"+domain+"_"+language+"_terms.csv"    #  Path to domain terms in the corresponding language,    extract from csv file
+ann_path = path_to_corpus+"/Matcha/"+language+"/"+domain+"/annotated/annotations/unique_annotation_lists/"+domain+"_"+language+"_terms.csv"    #  Path to domain terms in the corresponding language,    extract from csv file
 df = pd.read_csv(ann_path, delimiter=';')
 data_list = df.values.tolist()
 all_true_terms=[i[0].lower() for i in data_list]
@@ -169,22 +171,22 @@ print(len(set(candidate_list)))
 #################### ENCODING ####################################
 abb_i=[i[0].lower() for i in data_list if i[1]=="Abb"]
 
-sents_en=[[i,model_2.encode(i, normalize_embeddings=True)] for i in sents]
+sents_en=[[i,model_encoding.encode(i, normalize_embeddings=True)] for i in sents]
 cos_uni=[]
 for i in set(unigrams):
-  i_en= model_2.encode(i, normalize_embeddings=True)
+  i_en= model_encoding.encode(i, normalize_embeddings=True)
   for s in sents_en:
      if i.lower() in s[0].lower():
        s_en=s[1]
-       topic_score=model_2.similarity(i_en, s_en).tolist()[0][0]
+       topic_score=model_encoding.similarity(i_en, s_en).tolist()[0][0]
        cos_uni.append([i,topic_score])
 cos_mwe=[]
 for i in set(candidate_list):
-  i_en= model_2.encode(i, normalize_embeddings=True)
+  i_en= model_encoding.encode(i, normalize_embeddings=True)
   for s in sents_en:
      if i.lower() in s[0].lower():
        s_en=s[1]
-       topic_score=model_2.similarity(i_en, s_en).tolist()[0][0]
+       topic_score=model_encoding.similarity(i_en, s_en).tolist()[0][0]
        cos_mwe.append([i,topic_score])
 uni=[i[0] for i in cos_uni if i[1]>0.7]
 mwe=[i[0] for i in cos_mwe if i[1]>0.7]
