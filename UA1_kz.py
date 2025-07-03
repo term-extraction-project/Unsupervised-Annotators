@@ -1,10 +1,11 @@
+! git clone https://github.com/term-extraction-project/Matcha.git
 import os
 import pandas as pd
 import csv
 
 #################### MATCHA ####################################
 # Connecting the Match case
-path_to_corpus="path to corpus" #write  path to corpus
+path_to_corpus="/content/" #write  path to corpus
 
 langs=["en","kaz"]               
 domains=["block","material_sci"]
@@ -12,7 +13,7 @@ domains=["block","material_sci"]
 language=langs[1]                # Language selection    set kazakh , since this version is for the Kazakh language
 domain=domains[0]                # domain selection
 
-folder_path=path_to_corpus+"/Matcha-main/"+language+"/"+domain+"/annotated/texts"          # Path to domain texts in the corresponding language
+folder_path=path_to_corpus+"Matcha/"+language+"/"+domain+"/annotated/texts"          # Path to domain texts in the corresponding language
 files_name=[]
 texts=dict()
 true_terms_by_doc=dict()
@@ -32,7 +33,7 @@ for filename in file_list:
 
 all_true_terms=[]
 
-ann_path = path_to_corpus+"/Matcha-main/"+language+"/"+domain+"/annotated/annotations/unique_annotation_lists/"+domain+"_"+language+"_terms.csv"    #  Path to domain terms in the corresponding language,    extract from csv file
+ann_path = path_to_corpus+"/Matcha/"+language+"/"+domain+"/annotated/annotations/unique_annotation_lists/"+domain+"_"+language+"_terms.csv"    #  Path to domain terms in the corresponding language,    extract from csv file
 
 df = pd.read_csv(ann_path, delimiter=';')
 data_list = df.values.tolist()
@@ -48,7 +49,7 @@ stanza.download('kk')
 nlp = stanza.Pipeline('kk')   # Initialize the Kazakh pipeline
 
 from torch import Tensor
-!!pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
+!!pip install torch
 
 import torch
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -68,7 +69,7 @@ from collections import namedtuple
 CandidateMWE = namedtuple('CandidateMWE',['text','head', 'sentence','self_encode', 'sent_encode'])
 CandidateW=namedtuple('CandidateW',['text','lemma', 'self_encode' ])
 
-all_tetxts_lemms=" ".join([word.lemma for sent in nlp(all_texts).sentences for word in sent.words])
+all_texts_lemms=" ".join([word.lemma for sent in nlp(all_texts).sentences for word in sent.words])
 
 !git clone https://github.com/term-extraction-project/multi_word_expressions.git
 import sys
@@ -95,10 +96,11 @@ def parse_candidates(text:str):
                         #stop_words=custom_stop_words_en,   # Пользовательские стоп-слова, по умолчанию установлены
                         #list_seq=custom_pos_patterns_en,   # Пользовательские POS-шаблоны, по умолчанию установлены
                         cohision_filter=True,               # Фильтрация по когезии
-                        additional_text=all_tetxts_lemms,    # Дополнительный текст (если требуется)
+                        additional_text=all_texts_lemms,    # Дополнительный текст (если требуется)
                         f_raw_sc=2,                         # Частотный фильтр для сырого текста
                         f_req_sc=1)                         # Частотный фильтр для отобранных кандидатов
         candidates = extractor.extract_phrases()
+        candidates=list(set(candidates))
 
         for chunk in candidates:
                 if len(set(chunk).intersection(set(characters)))==len(set(chunk)):
